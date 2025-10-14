@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Dashboard — Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="card">
+    <h2>Sign in</h2>
+
+    <label>Email or username
+      <input id="userInput" placeholder="username or email" autofocus>
+    </label>
+
+    <label>Password
+      <input id="passInput" type="password" placeholder="password">
+    </label>
+
+    <div class="actions">
+      <button id="loginBtn">Log in</button>
+    </div>
+
+    <p id="msg" class="msg"></p>
+
+    <small>To add users edit <code>credentials.js</code> in the repo.</small>
+  </main>
+
+  <script src="credentials.js"></script>
+  <script>
+    const userEl = document.getElementById('userInput');
+    const passEl = document.getElementById('passInput');
+    const msg = document.getElementById('msg');
+
+    function setSession(username) {
+      // store username in sessionStorage for dashboard access
+      sessionStorage.setItem('loggedUser', username);
+    }
+
+    document.getElementById('loginBtn').onclick = () => {
+      const u = (userEl.value || '').trim();
+      const p = passEl.value || '';
+      if (!u || !p) { msg.textContent = 'Enter username and password'; return; }
+
+      const matched = (window.CREDENTIALS || []).find(c =>
+        (c.username === u || (c.email && c.email === u)) && c.password === p
+      );
+
+      if (matched) {
+        setSession(matched.username);
+        window.location = 'dashboard.html';
+      } else {
+        msg.textContent = 'Invalid credentials';
+      }
+    };
+
+    // allow Enter key to submit
+    [userEl, passEl].forEach(el => {
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('loginBtn').click();
+      });
+    });
+  </script>
+</body>
+</html>

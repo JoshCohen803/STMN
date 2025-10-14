@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="left">
+      <strong>My Dashboard</strong>
+    </div>
+    <div class="right">
+      <span id="who"></span>
+      <button id="logoutBtn">Log out</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h3>Upload a file</h3>
+      <input type="file" id="fileInput" />
+      <div class="actions">
+        <button id="uploadBtn">Upload</button>
+        <button id="clearAll">Delete all my files</button>
+      </div>
+      <p id="uploadMsg" class="msg"></p>
+    </section>
+
+    <section class="card">
+      <h3>Your files</h3>
+      <ul id="filesList" class="file-list"></ul>
+    </section>
+  </main>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
