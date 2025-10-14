@@ -1,16 +1,21 @@
-/* styles.css - minimal, tweak as you like */
-:root { --bg:#f7f8fb; --card:#fff; --accent:#0b5ed7; --muted:#666; }
+:root{--bg:#0b0b0b;--card:#111;--muted:#bdbdbd;--accent:#fff}
 *{box-sizing:border-box}
-body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:0; background:var(--bg); color:#111}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#fff;border-bottom:1px solid #e6e9ef}
+body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:0;background:linear-gradient(180deg,#050505,#0b0b0b);color:var(--accent)}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#000;border-bottom:1px solid #222}
+.topbar strong{color:#fff}
 .container{max-width:980px;margin:24px auto;padding:0 16px}
-.card{background:var(--card);padding:18px;border-radius:10px;box-shadow:0 1px 4px rgba(20,30,50,0.04);margin-bottom:18px}
-input[type="text"], input[type="password"], input[type="file"], input[type="email"] {width:100%;padding:8px;border:1px solid #e2e6ef;border-radius:6px;margin-top:6px}
-button{background:var(--accent);color:#fff;border:0;padding:8px 12px;border-radius:6px;cursor:pointer;margin-left:6px}
-button.secondary{background:#6c757d}
+.card{background:var(--card);padding:18px;border-radius:8px;margin-bottom:18px;border:1px solid #222}
+input, select, textarea{background:#0f0f0f;color:var(--accent);border:1px solid #222;padding:8px;border-radius:6px;margin:6px 0;width:100%}
+button{background:#222;color:var(--accent);border-radius:6px;padding:8px 10px;border:1px solid #333;cursor:pointer}
+button:hover{filter:brightness(1.1)}
 .actions{margin-top:10px}
 .msg{color:var(--muted);margin-top:8px}
+.table{width:100%;border-collapse:collapse}
+.table th, .table td{padding:8px;border-bottom:1px solid #222;color:var(--muted)}
 .file-list{list-style:none;padding:0;margin:0}
-.file-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed #eee}
+.file-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed #151515}
 .file-controls button{margin-left:8px}
-.card small, .card code{color:var(--muted)}
+.preview-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000}
+.preview-inner{background:#050505;padding:18px;border-radius:8px;max-width:90%;max-height:90%;overflow:auto;border:1px solid #222;color:var(--muted)}
+.muted{color:#888;font-size:0.9em}
+.brand img{display:inline-block;vertical-align:middle}
