@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Scores → HTML Table (Winner Left, Alphabetized)</title>
+  <style>
+    :root{
+      --bg:#ffffff; --muted:#6b7280; --accent:#0f62fe; --stroke:#e6e6e6;
+      --radius:10px; --gap:12px;
+    }
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+      background:var(--bg); color:#0f172a; padding:18px; box-sizing:border-box;
+    }
+    .app{max-width:1100px; margin:0 auto; display:grid; gap:18px;}
+    header{display:flex; gap:12px; align-items:center; justify-content:space-between;}
+    h1{font-size:18px;margin:0}
+    .meta{font-size:13px;color:var(--muted)}
+    .main{display:grid; grid-template-columns: 1fr 420px; gap:18px;}
+    @media (max-width:980px){ .main{grid-template-columns:1fr} }
+    .card{background:#fff;border:1px solid var(--stroke); padding:12px; border-radius:var(--radius); box-shadow:0 1px 4px rgba(12,14,22,0.04)}
+    textarea{width:100%;min-height:360px;padding:12px;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace;font-size:13px;border:1px solid #e9eef6;border-radius:8px;resize:vertical}
+    .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    button{background:var(--accent); color:#fff; border:none; padding:8px 12px;border-radius:8px; cursor:pointer}
+    button.secondary{background:#f3f4f6;color:#111;border:1px solid var(--stroke)}
+    button.ghost{background:transparent;color:var(--accent);border:1px dashed var(--stroke)}
+    .small{font-size:13px;color:var(--muted)}
+    .preview{max-height:360px; overflow:auto; padding:10px; border-radius:8px; border:1px solid var(--stroke); background:#fbfbff}
+    .outputRaw{white-space:pre-wrap; max-height:200px; overflow:auto; padding:10px; border-radius:8px; border:1px solid var(--stroke); background:#fff}
+    .row{display:flex; gap:8px; align-items:center; justify-content:space-between}
+    .history-list{max-height:320px; overflow:auto; margin-top:8px; display:flex; flex-direction:column; gap:8px}
+    .history-item{display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px; border-radius:8px; border:1px solid #f0f3f7; background:#fff}
+    .muted{color:var(--muted); font-size:13px}
+    .flexcol{display:flex; flex-direction:column; gap:8px}
+    input[type="text"]{padding:8px;border-radius:8px;border:1px solid var(--stroke); width:100%}
+    .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#eef2ff;color:var(--accent)}
+    footer{font-size:13px;color:var(--muted); margin-top:6px}
+    .top-row{display:flex; gap:8px; align-items:center}
+    .status{font-size:13px;color:var(--muted);margin-left:8px}
+    .danger{color:#b33}
+    .actions{display:flex; gap:8px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Scores → HTML Table</h1>
+        <div class="meta">Paste lines like <code>TEAM SCORE TEAM SCORE</code>. Auto-saves locally and stores snapshots (history). This version puts the <strong>winner</strong> on the left and alphabetizes by the winner.</div>
+      </div>
+      <div class="top-row">
+        <div class="badge" id="autosaveBadge">Autosave: on</div>
+        <div class="status" id="autosaveStatus">Last saved: —</div>
+      </div>
+    </header>
+
+    <div class="main">
+      <!-- LEFT: editor -->
+      <div class="card">
+        <div style="display:flex; gap:12px; align-items:center; justify-content:space-between;">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <strong>Editor</strong>
+            <div class="small muted">Paste or type your raw matches</div>
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center;">
+            <label class="small" title="Autosave toggle">
+              <input type="checkbox" id="autosaveToggle" checked> Autosave
+            </label>
+            <button id="saveSnapshot" class="secondary" title="Save snapshot to history">Save snapshot</button>
+            <button id="clearEditor" class="ghost">Clear</button>
+          </div>
+        </div>
+
+        <div style="margin-top:10px" class="flexcol">
+          <input id="titleInput" type="text" placeholder="Optional snapshot title (e.g. Week 2 Scores)"/>
+          <textarea id="editor" spellcheck="false" placeholder="AC FLORA 56 LANCASTER 10\nCENTRAL 56 BUFORD 10\n..."></textarea>
+
+          <div class="controls">
+            <button id="convertBtn">Convert</button>
+            <button id="copyHtmlBtn" class="secondary">Copy HTML</button>
+            <button id="downloadHtmlBtn" class="secondary">Download .html</button>
+            <button id="exportHistory" class="secondary">Export History</button>
+            <label for="importFile" class="secondary" style="padding:8px;border-radius:8px;cursor:pointer">Import</label>
+            <input id="importFile" type="file" accept="application/json" style="display:none"/>
+            <div style="flex:1"></div>
+            <label class="small"><input type="checkbox" id="escapeNames"> Escape HTML in names</label>
+            <label class="small" style="margin-left:6px"><input type="checkbox" id="includeWrapper" checked> Include &lt;table&gt; wrapper</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: preview + history -->
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>Generated HTML</strong>
+            <div class="small muted" id="rowsInfo">0 rows</div>
+          </div>
+
+          <div style="margin-top:8px">
+            <div class="outputRaw" id="rawOutput">(no output)</div>
+            <div style="margin-top:10px">
+              <strong class="small">Rendered preview</strong>
+              <div class="preview" id="preview">(no preview)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>History / Snapshots</strong>
+            <div class="small muted">Local only • stored in your browser</div>
+          </div>
+
+          <div style="margin-top:8px">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button id="clearHistory" class="ghost">Clear history</button>
+              <div class="small" style="margin-left:auto">Stored items: <span id="historyCount">0</span></div>
+            </div>
+
+            <div class="history-list" id="historyList" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      This is a static page — everything is stored locally. To publish: push to a GitHub repo and enable Pages. <span style="color:#666">No servers, no tracking.</span>
+    </footer>
+  </div>
+
+  <script>
+    // Keys
+    const KEY_CURRENT = 'scores_table_current_v1';
+    const KEY_HISTORY = 'scores_table_history_v1';
+
+    // Elements
+    const editor = document.getElementById('editor');
+    const titleInput = document.getElementById('titleInput');
+    const autosaveToggle = document.getElementById('autosaveToggle');
+    const autosaveBadge = document.getElementById('autosaveBadge');
+    const autosaveStatus = document.getElementById('autosaveStatus');
+    const convertBtn = document.getElementById('convertBtn');
+    const rawOutput = document.getElementById('rawOutput');
+    const preview = document.getElementById('preview');
+    const rowsInfo = document.getElementById('rowsInfo');
+    const saveSnapshotBtn = document.getElementById('saveSnapshot');
+    const historyList = document.getElementById('historyList');
+    const historyCount = document.getElementById('historyCount');
+    const clearHistoryBtn = document.getElementById('clearHistory');
+    const copyHtmlBtn = document.getElementById('copyHtmlBtn');
+    const downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
+    const exportHistoryBtn = document.getElementById('exportHistory');
+    const importFile = document.getElementById('importFile');
+    const includeWrapperCheckbox = document.getElementById('includeWrapper');
+    const escapeNamesCheckbox = document.getElementById('escapeNames');
+    const clearEditorBtn = document.getElementById('clearEditor');
+
+    // Utilities
+    function nowIso(){ return new Date().toISOString(); }
+    function fmtShort(dt){
+      try { return (new Date(dt)).toLocaleString(); } catch(e){ return dt; }
+    }
+    function loadJSON(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch(e){ return fallback; } }
+    function saveJSON(key, obj){ localStorage.setItem(key, JSON.stringify(obj)); }
+
+    // Parser logic (same robust logic as earlier)
+    function parseLines(text){
+      const lines = text.replace(/\r/g,'').split('\n');
+      const rows = []; const skipped = [];
+      for (let i=0;i<lines.length;i++){
+        const raw = lines[i].trim();
+        if (!raw) continue;
+        const matches = Array.from(raw.matchAll(/\b\d+\b/g));
+        if (matches.length < 2){
+          skipped.push({line: i+1, text: raw});
+          continue;
+        }
+        const m0 = matches[0], m1 = matches[1];
+        const idx0 = m0.index, idx1 = m1.index;
+        const score1 = m0[0], score2 = m1[0];
+        const team1 = raw.slice(0, idx0).trim();
+        const team2 = raw.slice(idx0 + String(score1).length, idx1).trim();
+        if (!team1 || !team2){
+          skipped.push({line: i+1, text: raw});
+          continue;
+        }
+        rows.push({team1, score1, team2, score2});
+      }
+      return {rows, skipped};
+    }
+
+    function escapeHtml(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;'); }
+
+    function processAndSortRows(rows){
+      // Ensure winner is on the left and then alphabetize by winner name
+      const fixed = rows.map(r => {
+        const s1 = Number(r.score1), s2 = Number(r.score2);
+        // If scores can't be parsed, keep original order
+        if (isNaN(s1) || isNaN(s2)) return { team1: r.team1, score1: r.score1, team2: r.team2, score2: r.score2 };
+        if (s1 >= s2) return { team1: r.team1, score1: String(s1), team2: r.team2, score2: String(s2) };
+        else return { team1: r.team2, score1: String(s2), team2: r.team1, score2: String(s1) };
+      });
+
+      fixed.sort((a,b) => a.team1.localeCompare(b.team1, undefined, {sensitivity:'base'}));
+      return fixed;
+    }
+
+    function buildHtmlFromRows(rows){
+      let html = '';
+      if (includeWrapperCheckbox.checked) html += '<table>\n  <tbody>\n';
+      for (const r of rows){
+        const t1 = escapeNamesCheckbox.checked ? escapeHtml(r.team1) : r.team1;
+        const t2 = escapeNamesCheckbox.checked ? escapeHtml(r.team2) : r.team2;
+        html += `    <tr><td>${t1}</td><td>${r.score1}</td><td>${t2}</td><td>${r.score2}</td></tr>\n`;
+      }
+      if (includeWrapperCheckbox.checked) html += '  </tbody>\n</table>';
+      return html;
+    }
+
+    // Update UI with conversion
+    function convertAndRender(updateEditorState = true){
+      const text = editor.value;
+      const {rows, skipped} = parseLines(text);
+      const processed = processAndSortRows(rows);
+      const html = buildHtmlFromRows(processed);
+      rawOutput.textContent = html || '(no output)';
+      // preview: for safety we only insert a table container; content is simple
+      if (html){
+        if (includeWrapperCheckbox.checked){
+          preview.innerHTML = html;
+        } else {
+          // wrap for preview
+          preview.innerHTML = '<table><tbody>' + html + '</tbody></table>';
+        }
+      } else {
+        preview.innerHTML = '<em>No preview — no rows found.</em>';
+      }
+      rowsInfo.textContent = processed.length + ' rows' + (skipped.length ? ` • skipped ${skipped.length}` : '');
+      // optionally update current saved state
+      if (updateEditorState) saveCurrentState();
+    }
+
+    // Current state persistence
+    function saveCurrentState(){
+      const payload = {
+        text: editor.value,
+        title: titleInput.value || '',
+        autosaveOn: autosaveToggle.checked,
+        includeWrapper: includeWrapperCheckbox.checked,
+        escapeNames: escapeNamesCheckbox.checked,
+        lastSaved: nowIso()
+      };
+      saveJSON(KEY_CURRENT, payload);
+      autosaveStatus.textContent = 'Last saved: ' + fmtShort(payload.lastSaved);
+    }
+
+    function loadCurrentState(){
+      const cur = loadJSON(KEY_CURRENT, null);
+      if (!cur) return;
+      editor.value = cur.text || '';
+      titleInput.value = cur.title || '';
+      autosaveToggle.checked = typeof cur.autosaveOn === 'boolean' ? cur.autosaveOn : true;
+      includeWrapperCheckbox.checked = typeof cur.includeWrapper === 'boolean' ? cur.includeWrapper : true;
+      escapeNamesCheckbox.checked = typeof cur.escapeNames === 'boolean' ? cur.escapeNames : false;
+      autosaveStatus.textContent = 'Last saved: ' + (cur.lastSaved ? fmtShort(cur.lastSaved) : '—');
+    }
+
+    // History
+    function loadHistory(){ return loadJSON(KEY_HISTORY, []); }
+    function saveHistory(list){ saveJSON(KEY_HISTORY, list); }
+    function addSnapshot(titleOverride){
+      const list = loadHistory();
+      const payload = {
+        id: 's_' + Date.now(),
+        createdAt: nowIso(),
+        title: titleOverride || (titleInput.value || ('Snapshot ' + (new Date()).toLocaleString())),
+        content: editor.value
+      };
+      list.unshift(payload); // newest first
+      if (list.length > 200) list.splice(200); // cap history
+      saveHistory(list);
+      renderHistory();
+    }
+
+    function renderHistory(){
+      const list = loadHistory();
+      historyList.innerHTML = '';
+      historyCount.textContent = list.length;
+      for (const item of list){
+        const row = document.createElement('div');
+        row.className = 'history-item';
+        const left = document.createElement('div');
+        left.style.display = 'flex'; left.style.gap = '8px'; left.style.alignItems='center';
+        const info = document.createElement('div');
+        info.innerHTML = `<strong style="display:block">${item.title}</strong><div class="muted">${fmtShort(item.createdAt)}</div>`;
+        left.appendChild(info);
+
+        const actions = document.createElement('div');
+        actions.style.display='flex'; actions.style.gap='6px';
+        const restoreBtn = document.createElement('button'); restoreBtn.textContent='Restore'; restoreBtn.className='secondary';
+        const loadBtn = document.createElement('button'); loadBtn.textContent='Load (replace)'; loadBtn.className='ghost';
+        const useBtn = document.createElement('button'); useBtn.textContent='Insert (append)'; useBtn.className='ghost';
+        const delBtn = document.createElement('button'); delBtn.textContent='Delete'; delBtn.className='ghost danger';
+
+        restoreBtn.addEventListener('click', ()=> {
+          if (!confirm('Replace editor content with this snapshot?')) return;
+          editor.value = item.content;
+          saveCurrentState();
+          convertAndRender();
+        });
+        loadBtn.addEventListener('click', ()=> {
+          editor.value = item.content;
+          saveCurrentState();
+          convertAndRender();
+        });
+        useBtn.addEventListener('click', ()=> {
+          editor.value = (editor.value ? editor.value.trim() + '\n' : '') + item.content;
+          saveCurrentState();
+          convertAndRender();
+        });
+        delBtn.addEventListener('click', ()=> {
+          if (!confirm('Delete this snapshot permanently?')) return;
+          const newList = loadHistory().filter(x=>x.id !== item.id);
+          saveHistory(newList);
+          renderHistory();
+        });
+
+        actions.appendChild(restoreBtn);
+        actions.appendChild(useBtn);
+        actions.appendChild(delBtn);
+
+        row.appendChild(left);
+        row.appendChild(actions);
+        historyList.appendChild(row);
+      }
+    }
+
+    // Clear history
+    clearHistoryBtn.addEventListener('click', ()=> {
+      if (!confirm('Clear all saved snapshots? This cannot be undone.')) return;
+      saveHistory([]);
+      renderHistory();
+    });
+
+    // Autosave debounce
+    let autosaveTimer = null;
+    function scheduleAutosave(){
+      if (!autosaveToggle.checked) return;
+      autosaveBadge.textContent = 'Autosave: on';
+      if (autosaveTimer) clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(()=>{
+        saveCurrentState();
+      }, 900);
+    }
+
+    // Event wiring
+    editor.addEventListener('input', ()=> {
+      scheduleAutosave();
+    });
+    titleInput.addEventListener('input', scheduleAutosave);
+    autosaveToggle.addEventListener('change', ()=> {
+      autosaveBadge.textContent = autosaveToggle.checked ? 'Autosave: on' : 'Autosave: off';
+      saveCurrentState();
+    });
+
+    convertBtn.addEventListener('click', ()=> convertAndRender(true));
+    saveSnapshotBtn.addEventListener('click', ()=> {
+      addSnapshot();
+      saveCurrentState();
+    });
+
+    copyHtmlBtn.addEventListener('click', async ()=>(
+      await navigator.clipboard.writeText(rawOutput.textContent).then(()=>{ copyHtmlBtn.textContent='Copied!'; setTimeout(()=> copyHtmlBtn.textContent='Copy HTML',1200); }).catch(()=> alert('Copy failed — try selecting and copying manually.'))
+    ));
+
+    downloadHtmlBtn.addEventListener('click', ()=>{
+      const content = rawOutput.textContent || '';
+      const blob = new Blob([content], {type:'text/html;charset=utf-8'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'table.html';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+    });
+
+    exportHistoryBtn.addEventListener('click', ()=>{
+      const data = loadHistory();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'scores-history.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+    });
+
+    importFile.addEventListener('change', (ev)=>{
+      const f = ev.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = function(e){
+        try {
+          const arr = JSON.parse(e.target.result);
+          if (!Array.isArray(arr)) throw new Error('Invalid format (expected array).');
+          // merge with existing history (append at front)
+          const cur = loadHistory();
+          const merged = [...arr, ...cur];
+          saveHistory(merged.slice(0,200));
+          renderHistory();
+          alert('Imported ' + arr.length + ' snapshots.');
+        } catch(err){
+          alert('Import failed: ' + err.message);
+        }
+      };
+      reader.readAsText(f);
+      importFile.value = '';
+    });
+
+    clearEditorBtn.addEventListener('click', ()=>{
+      if (!confirm('Clear editor content?')) return;
+      editor.value = '';
+      saveCurrentState();
+      convertAndRender();
+    });
+
+    // Initial load
+    (function init(){
+      loadCurrentState();
+      renderHistory();
+      convertAndRender(false);
+      // initial autosave time text
+      const cur = loadJSON(KEY_CURRENT, null);
+      if (cur && cur.lastSaved) autosaveStatus.textContent = 'Last saved: ' + fmtShort(cur.lastSaved);
+      else autosaveStatus.textContent = 'Last saved: —';
+    })();
+
+    // Also save before unloading
+    window.addEventListener('beforeunload', (e)=>{
+      if (autosaveToggle.checked) saveCurrentState();
+    });
+  </script>
+</body>
+</html>
