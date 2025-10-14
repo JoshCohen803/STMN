@@ -1,9 +1,7 @@
-// credentials.js
-// Edit this file to add/remove user accounts.
-// Format: { username: 'name', password: 'pass' }
-// NOTE: This file is public in your repo. Do not add sensitive data.
 
+// credentials.js - only used to seed the browser DB the first time
+// Edit here if you want initial accounts — after first run use Admin panel
 window.CREDENTIALS = [
-  { username: 'jcohen', password: 'Grouchomoose1234$$' },
-  { username: 'bob',   password: 'hunter2' }
+  { username: 'admin', password: 'admin123', name: 'Site Admin', groups: ['Admin'] },
+  { username: 'jcohen',  password: 'Grouchomoose1234$$',  name: 'Josh',       groups: ['User'] }
 ];
