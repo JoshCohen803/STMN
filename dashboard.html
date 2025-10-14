@@ -2,17 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Dashboard</title>
+  <title>Dashboard — SportsTalk Media Network</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* small additions for tools / logo alignment (keeps with your styles.css theme) */
+    .topbar .left { display:flex; align-items:center; gap:12px; }
+    #logo { height:34px; display:inline-block; object-fit:contain; }
+    .nav-link { color:inherit; text-decoration:none; margin-right:12px; padding:6px 8px; border-radius:6px; }
+    .nav-link:hover { background: rgba(255,255,255,0.03); }
+    .tools-panel { display:none; position:fixed; inset:6vh 6vw 6vh 6vw; background:rgba(1,1,1,0.98); border:1px solid #222; border-radius:10px; z-index:1200; box-shadow:0 8px 30px rgba(0,0,0,0.6); overflow:hidden; }
+    .tools-header { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#0a0a0a; border-bottom:1px solid #111; }
+    .tools-iframe { width:100%; height:calc(100% - 48px); border:0; display:block; }
+    .tools-close { background:#222; color:var(--accent); border-radius:6px; padding:6px 10px; cursor:pointer; }
+    .small-muted { color:#888; font-size:0.9em }
+    @media (max-width:800px) {
+      .tools-panel { inset:4vh 3vw 4vh 3vw; }
+    }
+  </style>
 </head>
 <body>
   <header class="topbar">
     <div class="left">
-      <strong>My Dashboard</strong>
+      <!-- Add logo.png to repo root to display it -->
+      <img id="logo" src="logo.png" alt="SportsTalk Media Network logo" onerror="this.style.display='none'">
+      <div>
+        <strong>SportsTalk Media Network</strong><br>
+        <span class="small-muted">Dashboard</span>
+      </div>
     </div>
+
     <div class="right">
-      <span id="who"></span>
+      <!-- Tools / pages -->
+      <a href="scoreparser.html" target="_blank" class="nav-link" id="scoreParserLink">Score Parser (new tab)</a>
+      <button class="nav-link" id="openParserInline" title="Open Score Parser in-page">Open Score Parser</button>
+
+      <!-- Admin link is injected dynamically by dashboard.js for Admin users.
+           We keep the place for who + logout button so dashboard.js still finds them. -->
+      <span id="who" style="margin-left:10px; margin-right:10px;"></span>
       <button id="logoutBtn">Log out</button>
     </div>
   </header>
@@ -21,7 +48,7 @@
     <section class="card">
       <h3>Upload a file</h3>
       <input type="file" id="fileInput" />
-      <div class="actions">
+      <div class="actions" style="margin-top:8px">
         <button id="uploadBtn">Upload</button>
         <button id="clearAll">Delete all my files</button>
       </div>
@@ -34,6 +61,67 @@
     </section>
   </main>
 
+  <!-- Inline tools modal / iframe -->
+  <div id="toolsPanel" class="tools-panel" aria-hidden="true">
+    <div class="tools-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <strong>Score Parser</strong>
+        <span class="small-muted"> — SportsTalk Media Network</span>
+      </div>
+      <div>
+        <button id="openInNew" class="tools-close">Open new tab</button>
+        <button id="closeTools" class="tools-close">Close</button>
+      </div>
+    </div>
+    <iframe id="toolsIframe" class="tools-iframe" src="about:blank"></iframe>
+  </div>
+
+  <!-- Your existing logic; dashboard.js will handle auth, files, admin-link injection -->
+  <script>
+    // Inline controls for Score Parser panel (keeps dashboard.js unaffected)
+    const toolsPanel = document.getElementById('toolsPanel');
+    const toolsIframe = document.getElementById('toolsIframe');
+    const openParserInline = document.getElementById('openParserInline');
+    const closeTools = document.getElementById('closeTools');
+    const openInNew = document.getElementById('openInNew');
+
+    openParserInline.addEventListener('click', () => {
+      // load the parser page into the iframe and show panel
+      toolsIframe.src = 'scoreparser.html';
+      toolsPanel.style.display = 'block';
+      toolsPanel.setAttribute('aria-hidden', 'false');
+      // allow Escape to close
+      document.addEventListener('keydown', escCloser);
+    });
+
+    closeTools.addEventListener('click', () => {
+      closeToolsPanel();
+    });
+
+    openInNew.addEventListener('click', () => {
+      window.open('scoreparser.html', '_blank');
+    });
+
+    function closeToolsPanel() {
+      toolsPanel.style.display = 'none';
+      toolsIframe.src = 'about:blank';
+      toolsPanel.setAttribute('aria-hidden', 'true');
+      document.removeEventListener('keydown', escCloser);
+    }
+
+    function escCloser(e) {
+      if (e.key === 'Escape') closeToolsPanel();
+    }
+
+    // Ensure logout button exists for your dashboard.js to wire up
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      // dashboard.js attaches a listener too; this prevents double behavior if it already did
+      try { sessionStorage.removeItem('loggedUser'); } catch(e){}
+      window.location = 'index.html';
+    });
+  </script>
+
+  <!-- main app script (keeps existing behavior for uploading, listing, admin link injection) -->
   <script src="dashboard.js"></script>
 </body>
 </html>
