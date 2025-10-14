@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin — SportsTalk Media Network</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="brand">
+  <header class="topbar">
+    <div class="left">
+      <img id="logo" src="logo.png" alt="logo" style="height:34px;display:none">
+      <strong>SportsTalk Media Network</strong>
+    </div>
+    <div class="right">
+      <span id="who"></span>
+      <button id="back">Dashboard</button>
+      <button id="logout">Log out</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Admin — Users & Permissions</h2>
+      <div class="form-row">
+        <input id="newUser" placeholder="username">
+        <input id="newName" placeholder="full name">
+        <input id="newPass" placeholder="password" type="password">
+        <select id="newGroups" multiple>
+          <option>Admin</option>
+          <option>User</option>
+        </select>
+        <button id="createBtn">Create user</button>
+      </div>
+      <p class="msg" id="adminMsg"></p>
+    </section>
+
+    <section class="card">
+      <h3>Existing accounts</h3>
+      <table id="usersTable" class="table">
+        <thead><tr><th>Username</th><th>Name</th><th>Groups</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="credentials.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
